@@ -2,15 +2,32 @@
 - name: Update and install required packages
   hosts: all
   become: yes
+  serial: 1  # Processes nodes sequentially to avoid lock conflicts
   tasks:
-    - name: Update apt repo
+    - name: Ensure APT locks are cleared
+      block:
+        - name: Check for existing APT locks
+          stat:
+            path: /var/lib/apt/lists/lock
+          register: apt_lock
+
+        - name: Remove stale lock if exists
+          command: sudo rm -f /var/lib/apt/lists/lock
+          when: apt_lock.stat.exists
+          ignore_errors: yes
+
+    - name: Update package lists with retry
       apt:
         update_cache: yes
+        cache_valid_time: 3600  # Only update if older than 1 hour
+        lock_timeout: 30  # Wait up to 30 seconds for lock
+        force_apt_get: yes  # More reliable than apt
 
     - name: Upgrade all packages
       apt:
-        upgrade: full
+        upgrade: dist
         autoremove: yes
+        lock_timeout: 30
 
     - name: Install required packages
       apt:
@@ -21,6 +38,8 @@
           - php
           - libapache2-mod-php
         state: latest
+        install_recommends: no  # Skip optional dependencies
+        lock_timeout: 30
 
     - name: Ensure Apache is running
       service:
