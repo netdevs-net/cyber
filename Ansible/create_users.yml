@@ -1,0 +1,47 @@
+---
+- name: Create admin and regular users
+  hosts: all
+  become: yes
+  vars:
+    users:
+      - name: Antoni
+        uid: 2001
+        shell: /bin/sh
+        password: "$y$j9T$UwTU25CzknYGuPuqUeqvl0$LE5Efw0e1QO4kYtLzfmCKamWBlZtsiMMsQ5MQNIvTp6"
+        sudo: no
+        
+      - name: Antonio
+        uid: 2002
+        shell: /bin/sh
+        password: "$y$j9T$UwTU25CzknYGuPuqUeqvl0$LE5Efw0e1QO4kYtLzfmCKamWBlZtsiMMsQ5MQNIvTp6"
+        sudo: no
+        
+      - name: Antwone
+        uid: 2010
+        shell: /bin/bash
+        password: "$y$j9T$UwTU25CzknYGuPuqUeqvl0$LE5Efw0e1QO4kYtLzfmCKamWBlZtsiMMsQ5MQNIvTp6"
+        sudo: yes
+        
+      - name: Anthony
+        uid: 2011
+        shell: /bin/bash
+        password: "$y$j9T$UwTU25CzknYGuPuqUeqvl0$LE5Efw0e1QO4kYtLzfmCKamWBlZtsiMMsQ5MQNIvTp6"
+        sudo: yes
+
+  tasks:
+    - name: Create users with specified parameters
+      user:
+        name: "{{ item.name }}"
+        uid: "{{ item.uid }}"
+        shell: "{{ item.shell }}"
+        password: "{{ item.password }}"
+        update_password: always
+      loop: "{{ users }}"
+
+    - name: Grant sudo access to admins
+      lineinfile:
+        path: /etc/sudoers
+        line: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL"
+        validate: "visudo -cf %s"
+      loop: "{{ users }}"
+      when: item.sudo
