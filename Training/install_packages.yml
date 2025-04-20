@@ -1,0 +1,29 @@
+---
+- name: Update and install required packages
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt repo
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: full
+        autoremove: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - vim
+          - cowsay 
+          - apache2
+          - php
+          - libapache2-mod-php
+        state: latest
+
+    - name: Ensure Apache is running
+      service:
+        name: apache2
+        state: started
+        enabled: yes
